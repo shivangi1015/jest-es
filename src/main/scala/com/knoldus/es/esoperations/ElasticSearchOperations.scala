@@ -1,13 +1,13 @@
 package com.knoldus.es.esoperations
 
 import java.lang
+import java.util.logging.Logger
 
 import com.knoldus.es.client.ESClient
 import com.knoldus.es.request.ESDocument
 import io.searchbox.client.JestClient
 import io.searchbox.core._
-import org.elasticsearch.index.query.QueryBuilders.matchAllQuery
-import org.elasticsearch.index.query.{BoolQueryBuilder, MatchAllQueryBuilder, QueryBuilders}
+import org.elasticsearch.index.query.QueryBuilders
 import org.elasticsearch.search.builder.SearchSourceBuilder
 import play.api.libs.json.Json
 
@@ -16,24 +16,25 @@ trait ElasticSearchOperations {
 
   val client: JestClient = ESClient.jestClient
 
+  val logger: Logger = Logger.getLogger("ElasticSearchOperations")
+
   def insertInES[T](eSDocument: ESDocument[T])(implicit tjs: play.api.libs.json.Writes[T]): DocumentResult = {
     val source = Json.stringify(Json.toJson(eSDocument.obj))
-
-    //creating index in ElasticSearch
+    logger.info("creating index in ElasticSearch")
     val index: Index = new Index.Builder(source)
       .index(eSDocument.index)
       .`type`(eSDocument.docType)
       .id(eSDocument.docId)
       .build()
-    //executing client
+    logger.info("executing the client")
     client.execute(index)
   }
 
   def search(index: String, docType: String): lang.Long = {
-    //build query with QueryBuilder
+    logger.info("build query with QueryBuilder")
     val searchSourceBuilder: SearchSourceBuilder = new SearchSourceBuilder()
     val query = searchSourceBuilder.query(QueryBuilders.matchAllQuery())
-    println("Query:: " + query.toString)
+    logger.info("Query:: " + query.toString)
     val search = new Search.Builder(query.toString).addIndex(index).addType(docType).build()
     client.execute(search).getTotal
   }
